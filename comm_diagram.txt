@@ -1,0 +1,16 @@
+@startuml
+OpenIGTLink -> Interface: IGTL_STRING_IN
+note right
+  INIT
+  MOVE
+  SERIAL
+end note
+
+OpenIGTLink -> Interface: IGTL_TRANSFORM_IN
+note right
+  zFrameTransformation
+  targetTransformation
+  angleTransformation
+end note
+
+@enduml
