@@ -1,0 +1,16 @@
+@startuml
+[*] -->INIT
+INIT : Received initial conditions
+INIT: Robot position when INIT command was sent by 3DSlicer
+
+INIT -> ZFRAME
+ZFRAME: Received ZFrame Transform from 3DSlicer
+
+ZFRAME->TARGET
+TARGET: Received desired target from 3DSlicer
+
+TARGET --> MOVE
+MOVE: Received command to position template
+
+MOVE -> TARGET
+@enduml
