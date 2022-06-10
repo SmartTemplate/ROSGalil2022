@@ -3,14 +3,26 @@
 INIT : Received initial conditions
 INIT: Robot position when INIT command was sent by 3DSlicer
 
-INIT -> ZFRAME
+INIT -> IDLE
+IDLE: Wait for command
+IDLE: send information to 3D SLicer
+
+
+IDLE -> ZFRAME
 ZFRAME: Received ZFrame Transform from 3DSlicer
 
-ZFRAME->TARGET
+ZFRAME -> IDLE
+
+IDLE->TARGET
 TARGET: Received desired target from 3DSlicer
 
-TARGET --> MOVE
+TARGET->IDLE
+
+
+IDLE --> MOVE
 MOVE: Received command to position template
 
-MOVE -> TARGET
+MOVE -> IDLE
+
+
 @enduml
