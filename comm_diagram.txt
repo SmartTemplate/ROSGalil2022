@@ -13,4 +13,13 @@ note right
   angleTransformation
 end note
 
+Interface -> OpenIGTLink: IGTL_STRING_OUT
+note right
+  Target received
+  ZFrame status
+  Galil status
+  Footswitch status
+end note
+
+
 @enduml
