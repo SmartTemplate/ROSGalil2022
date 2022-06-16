@@ -1,0 +1,3 @@
+string data    # request
+---
+bool success   # response
