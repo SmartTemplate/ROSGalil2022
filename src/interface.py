@@ -17,17 +17,20 @@ class Interface:
         # ROS Topics
         rospy.Subscriber('IGTL_STRING_IN', igtlstring, self.callbackString)
         rospy.Subscriber('IGTL_TRANSFORM_IN', igtltransform, self.callbackTransformation)
-        self.rate = rospy.Rate(10) #10hz for main loop (state machine)
 
         # Variables
-        #TODO: Better define flags and states
-        self.state = NONE
-        self.command = NONE
+        #TODO: Discuss definition of flags and states
         self.flagInit = False
         self.flagZFrame = False
+        self.flagTarget = False
+        self.state = NONE
 
         # Initialize the node and name it.
         rospy.init_node('interface')
+        rospy.loginfo('Interface Node')
+
+        # Set timer for state machine loop
+        self.rate = rospy.Rate(10) #10hz
 
 #################################################################################################
 #####    Callback Functions for subscribed topics     ###########################################
@@ -47,11 +50,11 @@ class Interface:
                 init_motors = rospy.ServiceProxy('init_motors', Config)
                 if (init_motors(initCondition)):
                     rospy.loginfo("Homing successful")
-                    self.state = IDLE                   # Enter next state
+                    self.flagInit = True    
                 else:
                     rospy.loginfo("Could not initialize motors")
             except rospy.ServiceException as e:
-                rospy.loginfo("Controller Service call failed: %s"%e)
+                rospy.loginfo("Controller service call failed: %s"%e)
         else:
             rospy.loginfo('Invalid message, returning to IDLE state')
 
@@ -65,21 +68,22 @@ def main():
     try:
         #Instantiate object of node class
         interface = Interface()
-        rospy.loginfo('Interface Node\n')
-    except rospy.ROSInterruptException: pass
+    except rospy.ROSInterruptException: 
+        rospy.loginfo('Could not initialize Interface Node')
 
     while not rospy.is_shutdown():
         #NONE State - Wait for OpenIGTLink Connection
         if (interface.state == NONE):
-            rospy.wait_for_service('get_controller_connection_status')
             try:
+                rospy.wait_for_service('get_controller_connection_status', timeout=2) #2s
+                #Service response
                 if (rospy.ServiceProxy('get_controller_connection_status', Status) == True):
                     rospy.loginfo("Controller serial connection: ON")
                     interface.state = CONNECT
-                # else:
-                    # rospy.loginfo("Controller serial connection: OFF")
-            except rospy.ServiceException as e:
-                rospy.loginfo("Controller Service call failed: %s"%e)
+                else:
+                    rospy.loginfo("Controller serial connection: OFF")
+            except:
+                rospy.loginfo("Controller node not responding")
         #CONNECT State - Do nothing
         elif (interface.state == CONNECT):
             rospy.loginfo('Waiting for robot homing')

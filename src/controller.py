@@ -18,21 +18,17 @@ class Controller:
 
         # Initialize the node and name it.
         rospy.init_node('controller', anonymous=True)
+        rospy.loginfo('Controller Node')
 
         # Services
         rospy.Service('get_controller_connection_status', Status, self.get_controller_connection_status)
         rospy.Service('init_motors', Config, self.init_motors)
 
-        # Variables
-        self.controllerConnection = False    # Controller serial connection status
-        self.controllerCheck = False         # Galil configuration correct
-
         # Open serial connection with Galil
-        self.controllerConnection = self.open_connection()
-
-        # Set all motors to absolute motion
-        self.absoluteMode = self.set_absolute_motion(['A','B','C','D'])
-        self.controllerCheck = self.check_controller()
+        if self.open_connection():
+            # Set all motors to absolute motion
+            if self.set_absolute_motion(['A','B','C','D']) and self.check_controller():
+                rospy.loginfo('Controller initialized')                                      
 
 #################################################################################################
 #####    Functions from Controller node    ######################################################
@@ -56,7 +52,7 @@ class Controller:
                return 1
             except:
                self.connectionStatus = False
-               rospy.loginfo("\n*** could not open the serial communication ***\n")
+               rospy.loginfo("*** could not open the serial communication ***")
                return 0
 
     # Set motor channels for absolute value
@@ -117,23 +113,25 @@ class Controller:
 
     # Return current serial connection status with Galil controller
     def get_controller_connection_status(self):
-        return self.checkController
+        return self.ser.isOpen()
+        # return self.controllerConnection
 
-    # Initialize requested motor
+    # Initialize requested motors
     def init_motors(self, req):
         # Horizontal,'0' / Vertical,'1'
-        motor_position = {'US':['HUSA','','HUSB',''], 
+        motor = {'US':['HUSA','','HUSB',''], 
                         'LT':['HPELF',',0','HPEUP',',1'], 'LC':['HPELF',',0','HPEVC',',1'], 'LB':['HPELF',',0','HPEDW',',1'], 
                         'RT':['HPERT',',0','HPEUP',',1'], 'RC':['HPERT',',0','HPEVC',',1'], 'RB':['HPERT',',0','HPEDW',',1'], 
                         'CT':['HPEHC',',0','HPEUP',',1'], 'CC':['HPEHC',',0','HPEVC',',1'], 'CB':['HPEHC',',0','HPEDW',',1']}
-        motor = req.data
-        if motor in motor_position:
+        # Selected
+        sel = req.data
+        if sel in motor:
             try:
-                self.ser.write("XQ " + SHARP + motor_position[motor][0] + motor_position[motor][1] + ";")
-                rospy.loginfo("XQ " + SHARP + motor_position[motor][0] + motor_position[motor][1] + "\n")
+                self.ser.write("XQ " + SHARP + motor[sel][0] + motor[sel][1] + ";")
+                rospy.loginfo("XQ " + SHARP + motor[sel][0] + motor[sel][1] + "\n")
                 time.sleep(20.0)                     
-                self.ser.write("XQ " + SHARP + motor_position[motor][2] + motor_position[motor][3] + ";")
-                rospy.loginfo("XQ " + SHARP + motor_position[motor][2] + motor_position[motor][3] + "\n")
+                self.ser.write("XQ " + SHARP + motor[sel][2] + motor[sel][3] + ";")
+                rospy.loginfo("XQ " + SHARP + motor[sel][2] + motor[sel][3] + "\n")
                 return 1
             except:
                 rospy.loginfo("*** could not initialize motors ***")
@@ -147,8 +145,9 @@ def main():
     try:
         #Initialize controller
         control = Controller()
-        rospy.loginfo('Controller Node\n')
-    except rospy.ROSInterruptException: pass
+    except rospy.ROSInterruptException: 
+        rospy.loginfo('Could not initialize Controller Node')
+
 
     #spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
